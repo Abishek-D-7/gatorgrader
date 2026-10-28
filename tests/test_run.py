@@ -10,18 +10,37 @@ MAC = "Darwin"
 WINDOWS = "Windows"
 
 
+class DistinctStr(str):
+    """Equal to a str but never the same object."""
+
+
+def expected_echo_output(system_name):
+    """Return the output that echo makes on the given operating system."""
+    # running an "echo" will have a trailing newline
+    if system_name in (LINUX, MAC):
+        return b"Hello!\n"
+    # running an "echo" will have a carriage return and then trailing newline
+    if system_name == WINDOWS:
+        return b'"Hello!"\r\n'
+    return None
+
+
 def test_run_working_command_returns_message():
     """Check that a single line is returned from command ."""
     output, error, code = run.run_command('echo "Hello!"')
     assert error == b""
-    system_name = platform.system()
-    # running an "echo" will have a trailing newline
-    if system_name is LINUX or system_name is MAC:
-        assert output == b"Hello!\n"
-    # running an "echo" will have a carriage return and then trailing newline
-    elif system_name is WINDOWS:
-        assert output == b'"Hello!"\r\n'
+    assert output == expected_echo_output(platform.system())
     assert code == 0
+
+
+def test_expected_echo_output_uses_value_comparison():
+    """Match operating system names that are equal but distinct objects."""
+    linux = DistinctStr(LINUX)
+    windows = DistinctStr(WINDOWS)
+    assert linux == LINUX
+    assert linux is not LINUX
+    assert expected_echo_output(linux) == b"Hello!\n"
+    assert expected_echo_output(windows) == b'"Hello!"\r\n'
 
 
 def test_run_broken_command_returns_nonzero():
